@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "../third_party/glew/glew.h"
 #include "../third_party/glfw/glfw3.h"
-// #include <glew/glew.h>
-// #include <glfw/glfw3.h>
 
 class Window
 {
