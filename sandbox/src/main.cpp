@@ -1,7 +1,8 @@
+#include <vector>
+
 #include "engine.cpp"
 #include "mesh.cpp"
 #include "shader.cpp"
-#include <vector>
 
 #include <../../engine/third_party/glm/glm.hpp>
 #include <../../engine/third_party/glm/gtc/matrix_transform.hpp>
@@ -14,7 +15,7 @@ const float toRadians = 3.14159265f / 180.0f;
 static const char* vShader = "shaders/shader.vert";
 static const char* fShader = "shaders/shader.frag";
 
-GLuint uniformProjection = 0, uniformModel = 0;
+GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0;
 glm::mat4 projection;
 
 float curAngle = 0.0f;
@@ -52,12 +53,13 @@ void CreateShaders()
 void render()
 {
     // Rotate
-    curAngle += 0.6f;
+    curAngle += 7.0f * deltaTime;
     if (curAngle >= 360) curAngle -= 360;
 
     shaders[0].use();
     uniformModel = shaders[0].uModel;
     uniformProjection = shaders[0].uProjection;
+    uniformView = shaders[0].uView;
 
     glm::mat4 model(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
@@ -66,6 +68,7 @@ void render()
     
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
     meshes[0]->render();
 }
 
@@ -74,6 +77,7 @@ int main()
     init();
     CreateObjects();
     CreateShaders();
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 0.0f, 5.0f, 0.5f);
 
     projection = glm::perspective(45.0f, (GLfloat)window.bufferWidth / window.bufferHeight, 0.1f, 100.0f);
     update(&render);

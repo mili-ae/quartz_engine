@@ -8,6 +8,21 @@ class Window
 {
     GLFWwindow *window;
     const char* title;
+
+    bool keys[1024];
+    GLfloat lastX;
+    GLfloat lastY;
+
+    // How much it has changed since last movement (lastX/Y)
+    GLfloat xChange;
+    GLfloat yChange;
+
+    bool mouseFirstMoved;
+
+    static void handleKeys(GLFWwindow* window, int key, int code, int action, int mode);
+    static void handleMouse(GLFWwindow* window, double xPos, double yPos);
+    void createCallbacks();
+
 public:
     GLint width, height;
     GLint bufferWidth, bufferHeight;
@@ -19,4 +34,8 @@ public:
     bool init();
     bool shouldClose() { return glfwWindowShouldClose(window); }
     void swapBuffers() { glfwSwapBuffers(window); }
+
+    bool* getKeys() { return keys; }
+    GLfloat getXChange();
+    GLfloat getYChange();
 };
