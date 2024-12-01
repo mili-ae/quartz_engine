@@ -2,8 +2,8 @@
 
 Window::Window()
 {
-    width = 800;
-    height = 600;
+    width = 1366;
+    height = 768;
     title = "Quartz Engine";
 
     for (size_t i = 0; i < 1024; i++)

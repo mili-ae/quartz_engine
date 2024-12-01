@@ -14,7 +14,9 @@ class Shader
     void add(GLuint prog, const char* code, GLenum shaderType);
     std::string readFile(const char* path);
 public:
-    GLuint uProjection, uModel, uView;
+    GLuint uProjection, uModel, uView, uCameraPosition,
+        uAmbientIntensity, uAmbientColor, uDiffuseIntensity, uDirection,
+        uSpecularIntensity, uShininess;
     Shader();
     ~Shader();
 

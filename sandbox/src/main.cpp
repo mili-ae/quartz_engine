@@ -1,9 +1,6 @@
 #include <vector>
 
 #include "engine.cpp"
-#include "mesh.cpp"
-#include "shader.cpp"
-#include "texture.cpp"
 
 #include <../../engine/third_party/glm/glm.hpp>
 #include <../../engine/third_party/glm/gtc/matrix_transform.hpp>
@@ -16,13 +13,61 @@ const float toRadians = 3.14159265f / 180.0f;
 static const char* vShader = "assets/shaders/shader.vert";
 static const char* fShader = "assets/shaders/shader.frag";
 
-GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0;
+GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformCameraPosition = 0,
+       uniformAmbientIntensity = 0, uniformAmbientColor = 0, uniformDirection = 0, uniformDiffuseIntensity = 0,
+       uniformSpecularIntensity = 0, uniformShininess = 0;
 glm::mat4 projection;
 
 Texture brickTexture;
 Texture dirtTexture;
 
+Material shinyMaterial;
+Material dullMaterial;
+
+Light mainLight;
+
 float curAngle = 0.0f;
+
+void calculateAverageNormals(unsigned int *indices, unsigned int indiceCount, GLfloat *vertices,
+                             unsigned int verticeCount, unsigned int vLength, unsigned int normalOffset)
+{
+    for (size_t i = 0; i < indiceCount; i += 3)
+    {
+        unsigned int in0 = indices[i] * vLength;
+        unsigned int in1 = indices[i + 1] * vLength;
+        unsigned int in2 = indices[i + 2] * vLength;
+        glm::vec3 v1(vertices[in1] - vertices[in0], vertices[in1 + 1] - vertices[in0 + 1], vertices[in1 + 2] - vertices[in0 + 2]);
+        glm::vec3 v2(vertices[in2] - vertices[in0], vertices[in2 + 1] - vertices[in0 + 1], vertices[in2 + 2] - vertices[in0 + 2]);
+        glm::vec3 normal = glm::cross(v1, v2);
+        normal = glm::normalize(normal);
+
+        in0 += normalOffset;
+        in1 += normalOffset;
+        in2 += normalOffset;
+
+        vertices[in0] += normal.x;
+        vertices[in0 + 1] += normal.y;
+        vertices[in0 + 2] += normal.z;
+
+        vertices[in1] += normal.x;
+        vertices[in1 + 1] += normal.y;
+        vertices[in0 + 2] += normal.z;
+
+        vertices[in2] += normal.x;
+        vertices[in2 + 1] += normal.y;
+        vertices[in2 + 2] += normal.z;
+    }
+
+    for (size_t i = 0; i < verticeCount / vLength; i++)
+    {
+        unsigned int nOffset = i * vLength + normalOffset;
+        glm::vec3 vec(vertices[nOffset], vertices[nOffset + 1], vertices[nOffset + 2]);
+        vec = glm::normalize(vec);
+        vertices[nOffset] = vec.x;
+        vertices[nOffset + 1] = vec.y;
+        vertices[nOffset + 2] = vec.z;
+    }
+}
 
 void CreateObjects()
 {
@@ -36,19 +81,21 @@ void CreateObjects()
 
     GLfloat vertices[] =
     {
-    //  x       y     z             u     v
-        -1.0f, -1.0f, 0.0f,         0.0f, 0.0f,
-        0.0f,  -1.0f, 1.0f,         0.5f, 0.0f,
-        1.0f,  -1.0f, 0.0f,         1.0f, 0.0f,
-        0.0f,   1.0f, 0.0f,         0.5f, 1.0f,
+    //  x       y     z             u     v         nx    ny    nz
+        -1.0f, -1.0f, -0.6f,         0.0f, 0.0f,     0.0f, 0.0f, 0.0f,
+        0.0f,  -1.0f, 1.0f,         0.5f, 0.0f,     0.0f, 0.0f, 0.0f,
+        1.0f,  -1.0f, -0.6f,         1.0f, 0.0f,     0.0f, 0.0f, 0.0f,
+        0.0f,   1.0f, 0.0f,         0.5f, 1.0f,     0.0f, 0.0f, 0.0f
     };
 
+    calculateAverageNormals(indices, 12, vertices, 32, 8, 5);
+
     Mesh *obj1 = new Mesh();
-    obj1->create(vertices, indices, 20, 12);
+    obj1->create(vertices, indices, 32, 12);
     meshes.push_back(obj1);
 
     Mesh *obj2 = new Mesh();
-    obj2->create(vertices, indices, 20, 12);
+    obj2->create(vertices, indices, 32, 12);
     meshes.push_back(obj2);
 }
 
@@ -70,22 +117,38 @@ void render()
     uniformProjection = shaders[0].uProjection;
     uniformView = shaders[0].uView;
 
+    uniformAmbientColor = shaders[0].uAmbientColor;
+    uniformAmbientIntensity = shaders[0].uAmbientIntensity;
+    
+    uniformDirection = shaders[0].uDirection;
+    uniformDiffuseIntensity = shaders[0].uDiffuseIntensity;
+
+    uniformCameraPosition = shaders[0].uCameraPosition;
+    uniformSpecularIntensity = shaders[0].uSpecularIntensity;
+    uniformShininess = shaders[0].uShininess;
+
+    mainLight.use(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
+
+    glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+
     glm::mat4 model(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
     // model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+    // model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
     
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+    glUniform3f(uniformCameraPosition, camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
     brickTexture.use();
+    shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
     meshes[0]->render();
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
-    model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+    model = glm::translate(model, glm::vec3(0.0f, 4.0f, -2.5f));
+    // model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
     dirtTexture.use();
+    dullMaterial.use(uniformSpecularIntensity, uniformShininess);
     meshes[1]->render();
 }
 
@@ -102,6 +165,11 @@ int main()
     brickTexture.load();
     dirtTexture = Texture("assets/dirt.png");
     dirtTexture.load();
+
+    shinyMaterial = Material(1.0f, 32);
+    dullMaterial = Material(0.3f, 4);
+
+    mainLight = Light(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, glm::vec3(0.0f, 0.0f, -1.0f), 0.3f);
 
     update(&render);
 }

@@ -1,6 +1,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "engine.hpp"
+#include "mesh.cpp"
+#include "shader.cpp"
+#include "texture.cpp"
+#include "light.cpp"
+#include "material.cpp"
 
 Window window = Window();
 
@@ -14,8 +19,8 @@ EXPORT_FN void init()
 
 EXPORT_FN void update(void (*func)() = nullptr)
 {
-    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 2.0f, 0.2f);
-    
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.2f);
+
     while (!window.shouldClose())
     {
         // Calculate deltaTime
@@ -30,7 +35,8 @@ EXPORT_FN void update(void (*func)() = nullptr)
         camera.keyControl(window.getKeys(), deltaTime);
         camera.mouseControl(window.getXChange(), window.getYChange());
 
-        glClearColor(128.0f / 255.0f, 218.0f / 255.0f, 243.0f / 255.0f, 1.0f);
+        // glClearColor(128.0f / 255.0f, 218.0f / 255.0f, 243.0f / 255.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         func();
