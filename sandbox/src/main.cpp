@@ -27,6 +27,8 @@ Material dullMaterial;
 DirectionalLight mainLight;
 PointLight pointLights[MAX_POINT_LIGHTS];
 unsigned int pointLightCount = 0;
+SpotLight spotLights[MAX_SPOT_LIGHTS];
+unsigned int spotLightCount = 0;
 
 float curAngle = 0.0f;
 
@@ -141,8 +143,13 @@ void render()
     uniformSpecularIntensity = shaders[0].uSpecularIntensity;
     uniformShininess = shaders[0].uShininess;
 
+    glm::vec3 lowerLight = camera.getPosition();
+    lowerLight.y -= 0.3f;
+    spotLights[0].SetFlash(lowerLight, camera.getDirection());
+
     shaders[0].setDirectionalLight(&mainLight);
     shaders[0].setPointLights(pointLights, pointLightCount);
+    shaders[0].setSpotLights(spotLights, spotLightCount);
 
     glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
@@ -160,7 +167,6 @@ void render()
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 4.0f, -2.5f));
-    // model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
     dirtTexture.use();
     dullMaterial.use(uniformSpecularIntensity, uniformShininess);
@@ -172,6 +178,8 @@ void render()
     dirtTexture.use();
     dullMaterial.use(uniformSpecularIntensity, uniformShininess);
     meshes[2]->render();
+
+    
 }
 
 int main()
@@ -180,7 +188,6 @@ int main()
     CreateObjects();
     CreateShaders();
     
-    // camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 2.0f, 0.2f);
     projection = glm::perspective(45.0f, (GLfloat)window.bufferWidth / window.bufferHeight, 0.1f, 100.0f);
 
     brickTexture = Texture("assets/brick.png");
@@ -193,12 +200,17 @@ int main()
     shinyMaterial = Material(1.0f, 32);
     dullMaterial = Material(0.3f, 4);
 
-    mainLight = DirectionalLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.3f, glm::vec3(0.0f, 0.0f, -1.0f));
+    mainLight = DirectionalLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.1f, glm::vec3(0.0f, 0.0f, -1.0f));
 
-    pointLights[0] = PointLight(glm::vec3(0.0f, 0.0f, 1.0f), 0.1f, 1.0f, glm::vec3(4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
-    pointLightCount++;
-    pointLights[1] = PointLight(glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, 1.0f, glm::vec3(-4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
-    pointLightCount++;
+    pointLights[0] = PointLight(glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.1f, glm::vec3(4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    // pointLightCount++;
+    pointLights[1] = PointLight(glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.1f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    // pointLightCount++;
+
+    spotLights[0] = SpotLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 2.0f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 10.0f);
+    spotLightCount++;
+    spotLights[1] = SpotLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(-100.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 20.0f);
+    spotLightCount++;
 
     update(&render);
 }

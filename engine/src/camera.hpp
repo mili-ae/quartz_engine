@@ -15,6 +15,7 @@ public:
     void mouseControl(GLfloat xChange, GLfloat yChange);
 
     glm::vec3 getPosition() { return position; }
+    glm::vec3 getDirection() { return glm::normalize(front); }
     glm::mat4 calculateViewMatrix();
 
 private:

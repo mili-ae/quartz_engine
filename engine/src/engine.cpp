@@ -7,6 +7,7 @@
 #include "texture.cpp"
 #include "directional_light.cpp"
 #include "point_light.cpp"
+#include "spot_light.cpp"
 #include "material.cpp"
 
 Window window = Window();
