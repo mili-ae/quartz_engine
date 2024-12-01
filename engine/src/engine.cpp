@@ -1,10 +1,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 
+#include "common.hpp"
 #include "engine.hpp"
 #include "mesh.cpp"
 #include "shader.cpp"
 #include "texture.cpp"
-#include "light.cpp"
+#include "directional_light.cpp"
+#include "point_light.cpp"
 #include "material.cpp"
 
 Window window = Window();

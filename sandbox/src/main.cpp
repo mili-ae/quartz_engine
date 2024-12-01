@@ -14,17 +14,19 @@ static const char* vShader = "assets/shaders/shader.vert";
 static const char* fShader = "assets/shaders/shader.frag";
 
 GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformCameraPosition = 0,
-       uniformAmbientIntensity = 0, uniformAmbientColor = 0, uniformDirection = 0, uniformDiffuseIntensity = 0,
        uniformSpecularIntensity = 0, uniformShininess = 0;
 glm::mat4 projection;
 
 Texture brickTexture;
 Texture dirtTexture;
+Texture plainTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
 
-Light mainLight;
+DirectionalLight mainLight;
+PointLight pointLights[MAX_POINT_LIGHTS];
+unsigned int pointLightCount = 0;
 
 float curAngle = 0.0f;
 
@@ -88,6 +90,20 @@ void CreateObjects()
         0.0f,   1.0f, 0.0f,         0.5f, 1.0f,     0.0f, 0.0f, 0.0f
     };
 
+    unsigned int floorIndices[] =
+    {
+        0, 2, 1,
+        1, 2, 3
+    };
+
+    GLfloat floorVertices[] =
+    {
+        -10.0f, 0.0f, -10.0f,       0.0f,   0.0f,       0.0f, -1.0f, 0.0f,
+        10.0f,  0.0f, -10.0f,       10.0f,  0.0f,       0.0f, -1.0f, 0.0f,
+        -10.0f, 0.0f,  10.0f,       0.0f,  10.0f,       0.0f, -1.0f, 0.0f,
+        10.0f,  0.0f,  10.0f,       10.0f, 10.0f,       0.0f, -1.0f, 0.0f
+    };
+
     calculateAverageNormals(indices, 12, vertices, 32, 8, 5);
 
     Mesh *obj1 = new Mesh();
@@ -97,6 +113,10 @@ void CreateObjects()
     Mesh *obj2 = new Mesh();
     obj2->create(vertices, indices, 32, 12);
     meshes.push_back(obj2);
+
+    Mesh *floor = new Mesh();
+    floor->create(floorVertices, floorIndices, 32, 6);
+    meshes.push_back(floor);
 }
 
 void CreateShaders()
@@ -117,17 +137,12 @@ void render()
     uniformProjection = shaders[0].uProjection;
     uniformView = shaders[0].uView;
 
-    uniformAmbientColor = shaders[0].uAmbientColor;
-    uniformAmbientIntensity = shaders[0].uAmbientIntensity;
-    
-    uniformDirection = shaders[0].uDirection;
-    uniformDiffuseIntensity = shaders[0].uDiffuseIntensity;
-
     uniformCameraPosition = shaders[0].uCameraPosition;
     uniformSpecularIntensity = shaders[0].uSpecularIntensity;
     uniformShininess = shaders[0].uShininess;
 
-    mainLight.use(uniformAmbientIntensity, uniformAmbientColor, uniformDiffuseIntensity, uniformDirection);
+    shaders[0].setDirectionalLight(&mainLight);
+    shaders[0].setPointLights(pointLights, pointLightCount);
 
     glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
@@ -150,6 +165,13 @@ void render()
     dirtTexture.use();
     dullMaterial.use(uniformSpecularIntensity, uniformShininess);
     meshes[1]->render();
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+    dirtTexture.use();
+    dullMaterial.use(uniformSpecularIntensity, uniformShininess);
+    meshes[2]->render();
 }
 
 int main()
@@ -165,11 +187,18 @@ int main()
     brickTexture.load();
     dirtTexture = Texture("assets/dirt.png");
     dirtTexture.load();
+    plainTexture = Texture("assets/plain.png");
+    plainTexture.load();
 
     shinyMaterial = Material(1.0f, 32);
     dullMaterial = Material(0.3f, 4);
 
-    mainLight = Light(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, glm::vec3(0.0f, 0.0f, -1.0f), 0.3f);
+    mainLight = DirectionalLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.3f, glm::vec3(0.0f, 0.0f, -1.0f));
+
+    pointLights[0] = PointLight(glm::vec3(0.0f, 0.0f, 1.0f), 0.1f, 1.0f, glm::vec3(4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLightCount++;
+    pointLights[1] = PointLight(glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, 1.0f, glm::vec3(-4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLightCount++;
 
     update(&render);
 }
