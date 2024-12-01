@@ -6,24 +6,24 @@ Window::Window()
     height = 600;
     title = "Quartz Engine";
 
-    xChange = 0.0f;
-    yChange = 0.0f;
-
     for (size_t i = 0; i < 1024; i++)
     {
         keys[i] = 0;
     }
+
+    xChange = 0.0f;
+    yChange = 0.0f;
 }
 
 Window::Window(GLint w, GLint h, const char* t) : width(w), height(h), title(t)
 {
-    xChange = 0.0f;
-    yChange = 0.0f;
-
     for (size_t i = 0; i < 1024; i++)
     {
         keys[i] = 0;
     }
+
+    xChange = 0.0f;
+    yChange = 0.0f;
 }
 
 Window::~Window()

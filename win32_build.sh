@@ -19,4 +19,4 @@ cp engine/lib/glfw3.dll build/win64
 # Sandbox
 s_includes="-Iengine/src"
 clang++ $s_includes -g sandbox/src/main.cpp -o $build_dir/sandbox.exe -l$build_dir/quartz_engine $libs $warnings
-cp -r sandbox/shaders build/win64
+cp -r sandbox/assets build/win64

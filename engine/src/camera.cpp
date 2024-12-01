@@ -9,7 +9,7 @@ date: 11/29/2024
 
 Camera::Camera()
 {
-
+    turnSpeed = 0;
 }
 
 Camera::Camera(glm::vec3 pos, glm::vec3 u, GLfloat ya, GLfloat p, GLfloat startMoveSpeed, GLfloat startTurnSpeed)
@@ -28,7 +28,6 @@ Camera::Camera(glm::vec3 pos, glm::vec3 u, GLfloat ya, GLfloat p, GLfloat startM
 
 Camera::~Camera()
 {
-    
 }
 
 void Camera::keyControl(bool* keys, GLfloat deltaTime)
@@ -54,12 +53,12 @@ void Camera::keyControl(bool* keys, GLfloat deltaTime)
         position += right * velocity;
     }
 
-    if (keys[GLFW_KEY_SPACE])
+    if (keys[GLFW_KEY_E])
     {
         position += up * velocity;
     }
 
-    if (keys[GLFW_KEY_N])
+    if (keys[GLFW_KEY_Q])
     {
         position -= up * velocity;
     }
@@ -97,7 +96,7 @@ void Camera::update()
     front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     front.y = sin(glm::radians(pitch));
     front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front = glm::normalize(front); // Remove magnitude
+    front = glm::normalize(front);
 
     // Right
     right = glm::normalize(glm::cross(front, worldUp));

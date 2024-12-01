@@ -1,3 +1,5 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include "engine.hpp"
 
 Window window = Window();
@@ -12,7 +14,8 @@ EXPORT_FN void init()
 
 EXPORT_FN void update(void (*func)() = nullptr)
 {
-
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 2.0f, 0.2f);
+    
     while (!window.shouldClose())
     {
         // Calculate deltaTime
