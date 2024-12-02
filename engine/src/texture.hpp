@@ -5,15 +5,16 @@
 class Texture {
 public:
     Texture();
-    Texture(char* path);
+    Texture(const char* path);
     ~Texture();
 
-    void load();
+    bool load();
+    bool loadAlpha();
     void use();
     void clear();
 
 private:
     GLuint textureID;
     int width, height, bitDepth;
-    char* filePath;
+    const char* filePath;
 };

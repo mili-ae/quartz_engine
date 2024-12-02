@@ -1,0 +1,11 @@
+Model Information:
+* title:	Mecha Miku
+* source:	https://sketchfab.com/3d-models/mecha-miku-108d30aa8ffd4054bcd89714cd53762d
+* author:	Voon Hong Liang (https://sketchfab.com/vhongliang)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Mecha Miku" (https://sketchfab.com/3d-models/mecha-miku-108d30aa8ffd4054bcd89714cd53762d) by Voon Hong Liang (https://sketchfab.com/vhongliang) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -2,9 +2,9 @@
 
 #include "engine.cpp"
 
-#include <../../engine/third_party/glm/glm.hpp>
-#include <../../engine/third_party/glm/gtc/matrix_transform.hpp>
-#include <../../engine/third_party/glm/gtc/type_ptr.hpp>
+#include "../../engine/third_party/glm/glm.hpp"
+#include "../../engine/third_party/glm/gtc/matrix_transform.hpp"
+#include "../../engine/third_party/glm/gtc/type_ptr.hpp"
 
 std::vector<Mesh*> meshes;
 std::vector<Shader> shaders;
@@ -18,11 +18,14 @@ GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformCameraPo
 glm::mat4 projection;
 
 Texture brickTexture;
-Texture dirtTexture;
+Texture concreteTexture;
 Texture plainTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
+
+Model miyako;
+Model xwing;
 
 DirectionalLight mainLight;
 PointLight pointLights[MAX_POINT_LIGHTS];
@@ -145,7 +148,7 @@ void render()
 
     glm::vec3 lowerLight = camera.getPosition();
     lowerLight.y -= 0.3f;
-    spotLights[0].SetFlash(lowerLight, camera.getDirection());
+    // spotLights[0].SetFlash(lowerLight, camera.getDirection());
 
     shaders[0].setDirectionalLight(&mainLight);
     shaders[0].setPointLights(pointLights, pointLightCount);
@@ -159,25 +162,35 @@ void render()
     // model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
     // model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
     
-    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform3f(uniformCameraPosition, camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
-    brickTexture.use();
-    shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
-    meshes[0]->render();
+    // glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+    // glUniform3f(uniformCameraPosition, camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+    // brickTexture.use();
+    // shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
+    // meshes[0]->render();
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 4.0f, -2.5f));
-    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-    dirtTexture.use();
-    dullMaterial.use(uniformSpecularIntensity, uniformShininess);
-    meshes[1]->render();
+    // model = glm::mat4(1.0f);
+    // model = glm::translate(model, glm::vec3(0.0f, 4.0f, -2.5f));
+    // glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+    // concreteTexture.use();
+    // dullMaterial.use(uniformSpecularIntensity, uniformShininess);
+    // meshes[1]->render();
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-    dirtTexture.use();
+    concreteTexture.use();
     dullMaterial.use(uniformSpecularIntensity, uniformShininess);
     meshes[2]->render();
+
+
+    // Imported models
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+    // model = glm::rotate(model, -90.0f * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.06f, 0.06f, 0.06f));
+    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+    shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
+    miyako.render();
 
     
 }
@@ -191,26 +204,29 @@ int main()
     projection = glm::perspective(45.0f, (GLfloat)window.bufferWidth / window.bufferHeight, 0.1f, 100.0f);
 
     brickTexture = Texture("assets/brick.png");
-    brickTexture.load();
-    dirtTexture = Texture("assets/dirt.png");
-    dirtTexture.load();
+    brickTexture.loadAlpha();
+    concreteTexture = Texture("assets/cracked_concrete.jpg");
+    concreteTexture.load();
     plainTexture = Texture("assets/plain.png");
-    plainTexture.load();
+    plainTexture.loadAlpha();
 
     shinyMaterial = Material(1.0f, 32);
     dullMaterial = Material(0.3f, 4);
 
-    mainLight = DirectionalLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.1f, glm::vec3(0.0f, 0.0f, -1.0f));
+    miyako = Model();
+    miyako.load("assets/models/mecha_miku/scene.gltf");
 
-    pointLights[0] = PointLight(glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.1f, glm::vec3(4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    mainLight = DirectionalLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.3f, 0.6f, glm::vec3(0.0f, 0.0f, -1.0f));
+
+    pointLights[0] = PointLight(glm::vec3(0.0f, 0.0f, 1.0f), 0.2f, 0.1f, glm::vec3(4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
     // pointLightCount++;
-    pointLights[1] = PointLight(glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.1f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLights[1] = PointLight(glm::vec3(0.0f, 1.0f, 0.0f), 0.2f, 0.1f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
     // pointLightCount++;
 
     spotLights[0] = SpotLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 2.0f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 10.0f);
     spotLightCount++;
     spotLights[1] = SpotLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(-100.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 20.0f);
-    spotLightCount++;
+    // spotLightCount++;
 
     update(&render);
 }
