@@ -6,6 +6,8 @@
 #include <fstream>
 
 #include "../third_party/glew/glew.h"
+#include "../third_party/glm/glm.hpp"
+#include "../third_party/glm/gtc/type_ptr.hpp"
 
 #include "common.hpp"
 #include "directional_light.hpp"
@@ -20,7 +22,8 @@ class Shader
     std::string readFile(const char* path);
 public:
     GLuint uProjection, uModel, uView, uCameraPosition,
-        uSpecularIntensity, uShininess;
+        uSpecularIntensity, uShininess,
+        uTexture, uDirectionalLightTransform, uDirectionalShadowMap;
     
     int pointLightCount;
     int spotLightCount;
@@ -69,6 +72,10 @@ public:
     void setDirectionalLight(DirectionalLight *dLight);
     void setPointLights(PointLight *pLight, unsigned int lightCount);
     void setSpotLights(SpotLight *sLight, unsigned int lightCount);
+    void setTexture(GLuint textureUnit);
+    void setDirectionalShadowMap(GLuint textureUnit);
+    void setDirectionalLightTransform(glm::mat4* lTransform);
+
     void use();
     void clear();
 };

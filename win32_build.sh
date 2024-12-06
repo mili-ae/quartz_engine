@@ -5,7 +5,7 @@ timestamp=$(date +%s)
 # Windows
 # Engine
 libs="-lopengl32 -lengine/lib/glew32 -lengine/lib/glfw3dll -lengine/lib/assimp-vc143-mt"
-warnings="-Wno-writable-strings -Wno-format-security -Wno-deprecated-declarations -Wno-switch"
+warnings="-Wno-writable-strings -Wno-format-security -Wno-deprecated-declarations -Wno-switch -Wno-address-of-temporary"
 includes="-Iengine/third_party -Iengine/third_party/Include -Iengine/third_party/glew -Iengine/third_party/glfw -Iengine/third_party/glm -Iengine/third_party/assimp"
 build_dir="build/win64"
 

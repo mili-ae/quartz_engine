@@ -8,7 +8,7 @@ PointLight::PointLight() : Light()
     exponent = 0.0f;
 }
 PointLight::PointLight(glm::vec3 vcolor, GLfloat aIntensity, GLfloat dIntensity, glm::vec3 pos, GLfloat con, GLfloat lin, GLfloat exp) 
-            : Light(vcolor, aIntensity, dIntensity), position(pos), constant(con), linear(lin), exponent(exp)
+            : Light(1024, 1024, vcolor, aIntensity, dIntensity), position(pos), constant(con), linear(lin), exponent(exp)
 {
 }
 
