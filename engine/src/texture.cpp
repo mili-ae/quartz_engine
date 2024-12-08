@@ -52,7 +52,7 @@ bool Texture::load()
 
 void Texture::use()
 {
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textureID);
 }
 

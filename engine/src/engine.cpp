@@ -1,5 +1,4 @@
 #define STB_IMAGE_IMPLEMENTATION
-
 #include "common.hpp"
 #include "engine.hpp"
 #include "mesh.cpp"

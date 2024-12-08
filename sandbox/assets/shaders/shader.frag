@@ -40,6 +40,12 @@ struct SpotLight
     float edge;
 };
 
+struct OmniShadowMap
+{
+    samplerCube shadowMap;
+    float farPlane;
+};
+
 struct Material
 {
     float specularIntensity;
@@ -53,12 +59,60 @@ uniform DirectionalLight directionalLight;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 
+uniform OmniShadowMap omniShadowMaps[MAX_POINT_LIGHTS + MAX_SPOT_LIGHTS];
+
 uniform sampler2D theTexture;
 uniform sampler2D directionalShadowMap;
 
 uniform Material material;
 
 uniform vec3 cameraPosition;
+
+vec3 gridSamplingDisk[20] = vec3[]
+(
+   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1), 
+   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
+   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
+   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
+);
+
+vec4 calculateLightByDirection(Light light, vec3 direction, float shadowFactor)
+{
+    vec4 ambientColor = vec4(light.color, 1.0f) * light.ambientIntensity;
+
+    // Calculating diffuse lighting
+    // Calculating the value between 0 and 1 that gives how much diffuse lighting there is,
+    // as in how dark the surface gets. We normalize so that the dot product ONLY takes into
+    // account the cos of the angle between the vectors. Normalizing removes the magnitude of
+    // each vector from the equation.
+    float diffuseFactor = max(dot(normalize(Normal), normalize(direction)), 0.0f);
+    // vec4 diffuseColor = vec4(light.color, 1.0f) * light.diffuseIntensity * diffuseFactor;
+    vec4 diffuseColor = vec4(light.color * light.diffuseIntensity * diffuseFactor, 1.0f);
+
+    vec4 specularColor = vec4(0, 0, 0, 0);
+
+    if (diffuseFactor > 0.0f)
+    {
+        vec3 fragToCamera = normalize(cameraPosition - FragPos);
+
+        // Vector of where the light is reflected around the normal. We want light to bounce
+        // off on the other side of the normal. Reflect does this. First argument is what we want
+        // to reflect, and the second is what we are reflecting around
+        vec3 reflectedVertex = normalize(reflect(direction, normalize(Normal)));
+        
+        // Find the angle between these 2 vectors. This is why we normalized both of those vectors
+        // so that we can get the cos between the two
+        float specularFactor = dot(fragToCamera, reflectedVertex);
+        if (specularFactor > 0.0f)
+        {
+            specularFactor = pow(specularFactor, material.shininess);
+            specularColor = vec4(light.color * material.specularIntensity * specularFactor, 1.0f);
+        }
+    }
+
+    return (ambientColor + (1.0f - shadowFactor) * (diffuseColor + specularColor));
+}
 
 float calculateDirectionalShadowFactor(DirectionalLight light)
 {
@@ -107,41 +161,60 @@ float calculateDirectionalShadowFactor(DirectionalLight light)
     return shadow;
 }
 
-vec4 calculateLightByDirection(Light light, vec3 direction, float shadowFactor)
+float calculateOmniShadowFactor(PointLight light, int shadowIndex)
 {
-    vec4 ambientColor = vec4(light.color, 1.0f) * light.ambientIntensity;
+    vec3 fragToLight = FragPos - light.position;
+    float current = length(fragToLight);
 
-    // Calculating diffuse lighting
-    // Calculating the value between 0 and 1 that gives how much diffuse lighting there is,
-    // as in how dark the surface gets. We normalize so that the dot product ONLY takes into
-    // account the cos of the angle between the vectors. Normalizing removes the magnitude of
-    // each vector from the equation.
-    float diffuseFactor = max(dot(normalize(Normal), normalize(direction)), 0.0f);
-    vec4 diffuseColor = vec4(light.color, 1.0f) * light.diffuseIntensity * diffuseFactor;
+    float shadow = 0.0;
+    float bias = 0.5;
+    float samples = 20;
 
-    vec4 specularColor = vec4(0, 0, 0, 0);
+    float viewDistance = length(cameraPosition - FragPos);
+    float diskRadius = (1.0 + (viewDistance / omniShadowMaps[shadowIndex].farPlane)) / 25.0;
 
-    if (diffuseFactor > 0.0f)
+    for (int i = 0; i < samples; i++)
     {
-        vec3 fragToCamera = normalize(cameraPosition - FragPos);
-
-        // Vector of where the light is reflected around the normal. We want light to bounce
-        // off on the other side of the normal. Reflect does this. First argument is what we want
-        // to reflect, and the second is what we are reflecting around
-        vec3 reflectedVertex = normalize(reflect(direction, normalize(Normal)));
-        
-        // Find the angle between these 2 vectors. This is why we normalized both of those vectors
-        // so that we can get the cos between the two
-        float specularFactor = dot(fragToCamera, reflectedVertex);
-        if (specularFactor > 0.0f)
+        float closest = texture(omniShadowMaps[shadowIndex].shadowMap, fragToLight + gridSamplingDisk[i] * diskRadius).r;
+        closest *= omniShadowMaps[shadowIndex].farPlane;
+        if (current - bias > closest)
         {
-            specularFactor = pow(specularFactor, material.shininess);
-            specularColor = vec4(light.color * material.specularIntensity * specularFactor, 1.0f);
+            shadow += 1.0;
         }
     }
 
-    return (ambientColor + (1.0f - shadowFactor) * (diffuseColor + specularColor));
+    shadow /= float(samples);
+    return shadow;
+
+    // vec3 fragToLight = FragPos - light.position;
+    // float current = length(fragToLight);
+
+    // float shadow = 0.0;
+    // float bias = 0.5;
+    // float samples = 4.0;
+    // float offset = 0.1;
+
+    // for (float x = -offset; x < offset; x += offset / (samples * 0.5))
+    // {
+    //     for (float y = -offset; y < offset; y += offset / (samples * 0.5))
+    //     {
+    //         for (float z = -offset; z < offset; z += offset / (samples * 0.5))
+    //         {
+    //             float closest = texture(omniShadowMaps[shadowIndex].shadowMap, fragToLight + vec3(x, y, z)).r;
+    //             closest *= omniShadowMaps[shadowIndex].farPlane;
+    //             if (current - bias > closest)
+    //             {
+    //                 shadow += 1.0;
+    //             }
+    //         }
+    //     }
+    // }
+
+    // shadow /= (samples * samples * samples);
+    // return shadow;
 }
+
+
 
 vec4 calculateDirectionalLight()
 {
@@ -149,14 +222,16 @@ vec4 calculateDirectionalLight()
     return calculateLightByDirection(directionalLight.base, directionalLight.direction, shadowFactor);
 }
 
-vec4 calcPointLight(PointLight pLight)
+vec4 calcPointLight(PointLight pLight, int shadowIndex)
 {
     // Get vector from point light to fragment
     vec3 direction = FragPos - pLight.position;
     float distance = length(direction);
     direction = normalize(direction);
 
-    vec4 color = calculateLightByDirection(pLight.base, direction, 0.0f);
+    float shadowFactor = calculateOmniShadowFactor(pLight, shadowIndex);
+
+    vec4 color = calculateLightByDirection(pLight.base, direction, shadowFactor);
     // Formula to calculate attenuation
     float attenuation = pLight.exponent * distance * distance + 
                         pLight.linear * distance + 
@@ -164,14 +239,14 @@ vec4 calcPointLight(PointLight pLight)
     return (color / attenuation);
 }
 
-vec4 calcSpotLight(SpotLight sLight)
+vec4 calcSpotLight(SpotLight sLight, int shadowIndex)
 {
     vec3 rayDirection = normalize(FragPos - sLight.base.position);
     float slFactor = dot(rayDirection, sLight.direction);
 
     if (slFactor > sLight.edge)
     {
-        vec4 color = calcPointLight(sLight.base);
+        vec4 color = calcPointLight(sLight.base, shadowIndex);
 
         return color * (1.0f - (1.0f - slFactor) * (1.0f / (1.0f - sLight.edge)));
     } else {
@@ -184,7 +259,7 @@ vec4 calcPointLights()
     vec4 totalColor = vec4(0, 0, 0, 0);
     for (int i = 0; i < pointLightCount; i++)
     {
-        totalColor += calcPointLight(pointLights[i]);
+        totalColor += calcPointLight(pointLights[i], i);
     }
 
     return totalColor;
@@ -195,7 +270,7 @@ vec4 calcSpotLights()
     vec4 totalColor = vec4(0, 0, 0, 0);
     for (int i = 0; i < spotLightCount; i++)
     {
-        totalColor += calcSpotLight(spotLights[i]);
+        totalColor += calcSpotLight(spotLights[i], i + pointLightCount);
     }
 
     return totalColor;

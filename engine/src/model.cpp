@@ -147,7 +147,7 @@ void Model::loadMaterials(const aiScene *scene)
 
         if (!textures[i])
         {
-            textures[i] = new Texture("assets/plain.png");
+            textures[i] = new Texture("assets/textures/plain.png");
             textures[i]->load();
         }
     }

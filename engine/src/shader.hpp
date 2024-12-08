@@ -18,12 +18,17 @@ class Shader
 {
     GLuint shaderID;
     void compile(const char* vertexCode, const char* fragmentCode);
+    void compile(const char* vertexCode, const char* geometryCode, const char* fragmentCode);
+    void compileProgram();
     void add(GLuint prog, const char* code, GLenum shaderType);
     std::string readFile(const char* path);
 public:
     GLuint uProjection, uModel, uView, uCameraPosition,
         uSpecularIntensity, uShininess,
-        uTexture, uDirectionalLightTransform, uDirectionalShadowMap;
+        uTexture, uDirectionalLightTransform, uDirectionalShadowMap,
+        uOmniLightPos, uFarPlane;
+
+    GLuint uLightMatrices[6];
     
     int pointLightCount;
     int spotLightCount;
@@ -64,17 +69,25 @@ public:
         GLuint uEdge;
     } uSpotLight[MAX_SPOT_LIGHTS];
 
+    struct {
+        GLuint shadowMap;
+        GLuint farPlane;
+    } uOmniShadowMap[MAX_POINT_LIGHTS + MAX_SPOT_LIGHTS];
+
     Shader();
     ~Shader();
 
     void createFromString(const char* vertexCode, const char* fragmentCode);
     void createFromFile(const char* vertexPath, const char* fragmentPath);
+    void createFromFile(const char* vertexPath, const char* geometryPath, const char* fragmentPath);
+    void validate();
     void setDirectionalLight(DirectionalLight *dLight);
-    void setPointLights(PointLight *pLight, unsigned int lightCount);
-    void setSpotLights(SpotLight *sLight, unsigned int lightCount);
+    void setPointLights(PointLight *pLight, unsigned int lightCount, unsigned int textureUnit, unsigned int offset);
+    void setSpotLights(SpotLight *sLight, unsigned int lightCount, unsigned int textureUnit, unsigned int offset);
     void setTexture(GLuint textureUnit);
     void setDirectionalShadowMap(GLuint textureUnit);
     void setDirectionalLightTransform(glm::mat4* lTransform);
+    void setLightMatrices(std::vector<glm::mat4> lightMatrices);
 
     void use();
     void clear();

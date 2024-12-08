@@ -1,17 +1,16 @@
 #include <vector>
-
 #include "engine.cpp"
 
-std::vector<Mesh*> meshes;
-std::vector<Shader> shaders;
 const float toRadians = 3.14159265f / 180.0f;
 
 GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformCameraPosition = 0,
-       uniformSpecularIntensity = 0, uniformShininess = 0;
+       uniformSpecularIntensity = 0, uniformShininess = 0, uniformOmniLightPos = 0, uniformFarPlane = 0;
 glm::mat4 projection;
 glm::mat4 model(1.0f);
 
+std::vector<Shader> shaders;
 Shader directionalShadowShader;
+Shader omniShadowShader;
 
 Texture brickTexture;
 Texture concreteTexture;
@@ -20,6 +19,7 @@ Texture plainTexture;
 Material shinyMaterial;
 Material dullMaterial;
 
+std::vector<Mesh*> meshes;
 Model miku;
 Model seahawk;
 
@@ -120,6 +120,8 @@ void CreateShaders()
 
     directionalShadowShader = Shader();
     directionalShadowShader.createFromFile("assets/shaders/directional_shadow_map.vert", "assets/shaders/directional_shadow_map.frag");
+    omniShadowShader = Shader();
+    omniShadowShader.createFromFile("assets/shaders/omni_shadow_map.vert", "assets/shaders/omni_shadow_map.geom", "assets/shaders/omni_shadow_map.frag");
 }
 
 void RenderScene()
@@ -156,14 +158,37 @@ void RenderScene()
 
 void DirectionalShadowMapPass(DirectionalLight* light)
 {
-    directionalShadowShader.use();
 
     glViewport(0, 0, light->shadowMap->shadowWidth, light->shadowMap->shadowHeight);
+    directionalShadowShader.use();
     light->shadowMap->write();
     glClear(GL_DEPTH_BUFFER_BIT);
 
     uniformModel = directionalShadowShader.uModel;
     directionalShadowShader.setDirectionalLightTransform(&light->calculateLightTransform());
+
+    directionalShadowShader.validate();
+    RenderScene();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OmniShadowMapPass(PointLight* light)
+{
+
+    glViewport(0, 0, light->shadowMap->shadowWidth, light->shadowMap->shadowHeight);
+    omniShadowShader.use();
+    uniformModel = omniShadowShader.uModel;
+    uniformOmniLightPos = omniShadowShader.uOmniLightPos;
+    uniformFarPlane = omniShadowShader.uFarPlane;
+
+    light->shadowMap->write();
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    glUniform3f(uniformOmniLightPos, light->position.x, light->position.y, light->position.z);
+    glUniform1f(uniformFarPlane, light->farPlane);
+    omniShadowShader.setLightMatrices(light->calculateLightTransform());
+
+    omniShadowShader.validate();
 
     RenderScene();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -190,34 +215,52 @@ void RenderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
     glUniform3f(uniformCameraPosition, camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 
     shaders[0].setDirectionalLight(&mainLight);
-    shaders[0].setPointLights(pointLights, pointLightCount);
-    shaders[0].setSpotLights(spotLights, spotLightCount);
+    shaders[0].setPointLights(pointLights, pointLightCount, 3, 0);
+    shaders[0].setSpotLights(spotLights, spotLightCount, 3 + pointLightCount, pointLightCount);
     shaders[0].setDirectionalLightTransform(&mainLight.calculateLightTransform());
     
-    mainLight.shadowMap->read(GL_TEXTURE1);
-    shaders[0].setTexture(0);
-    shaders[0].setDirectionalShadowMap(1);
+    mainLight.shadowMap->read(GL_TEXTURE2);
+    shaders[0].setTexture(1);
+    shaders[0].setDirectionalShadowMap(2);
     
     glm::vec3 lowerLight = camera.getPosition();
     lowerLight.y -= 0.3f;
-    // spotLights[0].SetFlash(lowerLight, camera.getDirection());
+    spotLights[0].SetFlash(lowerLight, camera.getDirection());
 
+    shaders[0].validate();
     RenderScene();
 }
 
 void render()
 {
     DirectionalShadowMapPass(&mainLight);
+
+    for (size_t i = 0; i < pointLightCount; i++)
+    {
+        OmniShadowMapPass(&pointLights[i]);
+    }
+
+    for (size_t i = 0; i < spotLightCount; i++)
+    {
+        OmniShadowMapPass(&spotLights[i]);
+    }
+
     RenderPass(projection, camera.calculateViewMatrix());
+
+    if (window.getKeys()[GLFW_KEY_L])
+    {
+        spotLights[0].toggle();
+        window.getKeys()[GLFW_KEY_L] = false;
+    }
 }
 
-int main()
+int main(int argc, char *args[])
 {
     init();
     CreateObjects();
     CreateShaders();
     
-    projection = glm::perspective(45.0f, (GLfloat)window.bufferWidth / window.bufferHeight, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(60.0f), (GLfloat)window.bufferWidth / window.bufferHeight, 0.1f, 100.0f);
 
     brickTexture = Texture("assets/textures/brick.png");
     brickTexture.load();
@@ -234,17 +277,19 @@ int main()
     seahawk = Model();
     seahawk.load("assets/models/seahawk/Seahawk.obj");
 
-    mainLight = DirectionalLight(2048, 2048, glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.6f, glm::vec3(0.0f, -15.0f, -10.0f));
+    mainLight = DirectionalLight(2048, 2048, glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.3f, glm::vec3(0.0f, -15.0f, -10.0f));
 
-    pointLights[0] = PointLight(glm::vec3(0.0f, 0.0f, 1.0f), 0.2f, 0.1f, glm::vec3(4.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
-    // pointLightCount++;
-    pointLights[1] = PointLight(glm::vec3(0.0f, 1.0f, 0.0f), 0.2f, 0.1f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
-    // pointLightCount++;
+    pointLights[0] = PointLight(1024, 1024, 0.01f, 100.0f, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLightCount++;
+    pointLights[1] = PointLight(1024, 1024, 0.01f, 100.0f, glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 1.0f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLightCount++;
 
-    spotLights[0] = SpotLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 2.0f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 10.0f);
-    // spotLightCount++;
-    spotLights[1] = SpotLight(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(-100.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 20.0f);
-    // spotLightCount++;
+    spotLights[0] = SpotLight(1024, 1024, 0.01f, 100.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 2.0f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 10.0f);
+    spotLightCount++;
+    spotLights[1] = SpotLight(1024, 1024, 0.01f, 100.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(-100.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 20.0f);
+    spotLightCount++;
 
     update(&render);
+
+    return 0;
 }
