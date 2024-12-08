@@ -16,7 +16,6 @@ clang++ $includes -g engine/src/engine.cpp -shared -o $build_dir/quartz_engine.d
 cp engine/lib/glew32.dll build/win64
 cp engine/lib/glfw3.dll build/win64
 cp engine/lib/assimp-vc143-mt.dll build/win64
-cp engine/lib/SDL3.dll build/win64
 
 # Sandbox
 s_includes="-Iengine/src -Iengine/third_party/assimp"

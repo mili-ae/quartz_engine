@@ -30,6 +30,9 @@ SpotLight spotLights[MAX_SPOT_LIGHTS];
 unsigned int spotLightCount = 0;
 
 GLfloat seahawkAngle = 0.0f;
+GLfloat mikuAngle = 0.0f;
+
+Skybox skybox;
 
 void calculateAverageNormals(unsigned int *indices, unsigned int indiceCount, GLfloat *vertices,
                              unsigned int verticeCount, unsigned int vLength, unsigned int normalOffset)
@@ -132,11 +135,16 @@ void RenderScene()
     model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
     concreteTexture.use();
-    dullMaterial.use(uniformSpecularIntensity, uniformShininess);
+    // dullMaterial.use(uniformSpecularIntensity, uniformShininess);
+    shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
     meshes[0]->render();
 
     // Imported models
+
+    mikuAngle += 15.0f * deltaTime;
+    if (mikuAngle > 360.0f) mikuAngle = 0.1f;
     model = glm::mat4(1.0f);
+    model = glm::rotate(model, -mikuAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
     model = glm::scale(model, glm::vec3(0.06f, 0.06f, 0.06f));
     glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -196,6 +204,15 @@ void OmniShadowMapPass(PointLight* light)
 
 void RenderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
 {
+    glViewport(0, 0, 1366, 768);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // call skybox before everything else
+    skybox.draw(viewMatrix, projectionMatrix);
+
+
     shaders[0].use();
     uniformModel = shaders[0].uModel;
     uniformProjection = shaders[0].uProjection;
@@ -205,10 +222,7 @@ void RenderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
     uniformSpecularIntensity = shaders[0].uSpecularIntensity;
     uniformShininess = shaders[0].uShininess;
 
-    glViewport(0, 0, 1366, 768);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
 
     glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(viewMatrix));
@@ -277,17 +291,28 @@ int main(int argc, char *args[])
     seahawk = Model();
     seahawk.load("assets/models/seahawk/Seahawk.obj");
 
-    mainLight = DirectionalLight(2048, 2048, glm::vec3(1.0f, 1.0f, 1.0f), 0.1f, 0.3f, glm::vec3(0.0f, -15.0f, -10.0f));
+    mainLight = DirectionalLight(2048, 2048, glm::vec3(1.0f, 0.53f, 0.3f), 0.1f, 0.8f, glm::vec3(-10.0f, -12.0f, 18.5f));
 
-    pointLights[0] = PointLight(1024, 1024, 0.01f, 100.0f, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLights[0] = PointLight(1024, 1024, 0.01f, 100.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(1.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
     pointLightCount++;
-    pointLights[1] = PointLight(1024, 1024, 0.01f, 100.0f, glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 1.0f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
+    pointLights[1] = PointLight(1024, 1024, 0.01f, 100.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(-4.0f, 2.0f, 0.0f), 0.3f, 0.2f, 0.1f);
     pointLightCount++;
 
     spotLights[0] = SpotLight(1024, 1024, 0.01f, 100.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 2.0f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 10.0f);
     spotLightCount++;
     spotLights[1] = SpotLight(1024, 1024, 0.01f, 100.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(-100.0f, -1.0f, 0.0f), 1.0f, 0.0f, 0.0f, 20.0f);
     spotLightCount++;
+
+    std::vector<std::string> skyboxFaces;
+
+    skyboxFaces.push_back("assets/textures/sunset_bay/SunsetBay_E.png");
+    skyboxFaces.push_back("assets/textures/sunset_bay/SunsetBay_W.png");
+    skyboxFaces.push_back("assets/textures/sunset_bay/SunsetBay_U.png");
+    skyboxFaces.push_back("assets/textures/sunset_bay/SunsetBay_D.png");
+    skyboxFaces.push_back("assets/textures/sunset_bay/SunsetBay_N.png");
+    skyboxFaces.push_back("assets/textures/sunset_bay/SunsetBay_S.png");
+
+    skybox = Skybox(skyboxFaces);
 
     update(&render);
 

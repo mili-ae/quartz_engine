@@ -9,6 +9,7 @@
 #include "spot_light.cpp"
 #include "material.cpp"
 #include "model.cpp"
+#include "skybox.cpp"
 
 Window window = Window();
 

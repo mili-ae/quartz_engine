@@ -1,6 +1,7 @@
 #pragma once
+
 #include "../third_party/glew/glew.h"
-#include "../third_party/stb_image.h"
+#include "common.hpp"
 
 class Texture {
 public:
