@@ -143,24 +143,24 @@ void RenderScene()
 
     mikuAngle += 15.0f * deltaTime;
     if (mikuAngle > 360.0f) mikuAngle = 0.1f;
-    model = glm::mat4(1.0f);
-    model = glm::rotate(model, -mikuAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(0.06f, 0.06f, 0.06f));
-    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-    shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
+    miku.setModel();
+    miku.rotate(-mikuAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+    miku.translate(glm::vec3(0.0f, -2.0f, 0.0f));
+    miku.scale(glm::vec3(0.06f, 0.06f, 0.06f));
+    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(miku.getModel()));
+    miku.material.use(uniformSpecularIntensity, uniformShininess);
     miku.render();
 
     seahawkAngle += 15.0f * deltaTime;
     if (seahawkAngle > 360.0f) seahawkAngle = 0.1f;
 
-    model = glm::mat4(1.0f);
-    model = glm::rotate(model, -seahawkAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::translate(model, glm::vec3(4.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, 20.0f * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, glm::vec3(0.02f, 0.02f, 0.02f));
-    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-    shinyMaterial.use(uniformSpecularIntensity, uniformShininess);
+    seahawk.setModel();
+    seahawk.rotate(-seahawkAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+    seahawk.translate(glm::vec3(4.0f, 1.0f, 0.0f));
+    seahawk.rotate(20.0f * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+    seahawk.scale(glm::vec3(0.02f, 0.02f, 0.02f));
+    glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(seahawk.getModel()));
+    seahawk.material.use(uniformSpecularIntensity, uniformShininess);
     seahawk.render();
 }
 
@@ -272,6 +272,7 @@ int main(int argc, char *args[])
 {
     init();
     CreateObjects();
+
     CreateShaders();
     
     projection = glm::perspective(glm::radians(60.0f), (GLfloat)window.bufferWidth / window.bufferHeight, 0.1f, 100.0f);
@@ -286,10 +287,13 @@ int main(int argc, char *args[])
     shinyMaterial = Material(1.0f, 32);
     dullMaterial = Material(0.3f, 4);
 
-    miku = Model();
-    miku.load("assets/models/mecha_miku/scene.gltf");
-    seahawk = Model();
-    seahawk.load("assets/models/seahawk/Seahawk.obj");
+    miku = Model("assets/models/mecha_miku/scene.gltf");
+    miku.setMaterial(shinyMaterial);
+    // miku.matrixModel = model;
+    // miku.loadMesh("assets/models/mecha_miku/scene.gltf");
+    seahawk = Model("assets/models/seahawk/Seahawk.obj");
+    seahawk.setMaterial(shinyMaterial);
+    // seahawk.loadMesh("assets/models/seahawk/Seahawk.obj");
 
     mainLight = DirectionalLight(2048, 2048, glm::vec3(1.0f, 0.53f, 0.3f), 0.1f, 0.8f, glm::vec3(-10.0f, -12.0f, 18.5f));
 

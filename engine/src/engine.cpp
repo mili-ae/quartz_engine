@@ -45,6 +45,7 @@ EXPORT_FN void update(void (*func)() = nullptr)
 
         func();
 
+
         glUseProgram(0);
 
         window.swapBuffers();

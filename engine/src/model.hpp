@@ -9,22 +9,35 @@
 
 #include "mesh.hpp"
 #include "texture.hpp"
+#include "transform.cpp"
 
 class Model {
 public:
     Model();
+    Model(const std::string& filename);
     ~Model();
-    void load(const std::string& filename);
+    void loadMesh(const std::string& filename);
+    void setMaterial(Material mat) { material = mat; }
     void render();
     void clear();
+
+    void translate(glm::vec3 pos);
+    void rotate(float angle, glm::vec3 axis);
+    void scale(glm::vec3 s);
+    void setModel() { transform.matrixModel = glm::mat4(1.0f);};
+    glm::mat4 getModel() { return transform.matrixModel; }
+
+    Material material;
 
 private:
     std::vector<Mesh*> meshes;
     std::vector<Texture*> textures;
     std::vector<unsigned int> meshToTex;
     std::string filePath;
-
-    void loadNode(aiNode *node, const aiScene *scene);
-    void loadMesh(aiMesh *mesh, const aiScene *scene);
-    void loadMaterials(const aiScene *scene);
+    
+    Transform transform;
+    
+    void loadAiNode(aiNode *node, const aiScene *scene);
+    void loadAiMesh(aiMesh *mesh, const aiScene *scene);
+    void loadAiMaterials(const aiScene *scene);
 };

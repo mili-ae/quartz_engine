@@ -2,13 +2,20 @@
 
 Model::Model()
 {
+    transform = Transform();
+}
+
+Model::Model(const std::string& filename)
+{
+    loadMesh(filename);
+    transform = Transform();
 }
 
 Model::~Model()
 {
 }
 
-void Model::load(const std::string& filename)
+void Model::loadMesh(const std::string& filename)
 {
     // int idx = std::string(filename).rfind("\\");
     // filePath = std::string(filename).substr(idx + 1);
@@ -23,8 +30,26 @@ void Model::load(const std::string& filename)
         return;
     }
 
-    loadNode(scene->mRootNode, scene);
-    loadMaterials(scene);
+    loadAiNode(scene->mRootNode, scene);
+    loadAiMaterials(scene);
+}
+
+void Model::translate(glm::vec3 pos)
+{
+    transform.position = pos;
+    transform.matrixModel = glm::translate(transform.matrixModel, pos);
+}
+
+void Model::rotate(float angle, glm::vec3 axis)
+{
+    transform.rotation = axis;
+    transform.matrixModel = glm::rotate(transform.matrixModel, angle, axis);
+}
+
+void Model::scale(glm::vec3 s)
+{
+    transform.scale = s;
+    transform.matrixModel = glm::scale(transform.matrixModel, s);
 }
 
 void Model::render()
@@ -63,20 +88,20 @@ void Model::clear()
     }
 }
 
-void Model::loadNode(aiNode *node, const aiScene *scene)
+void Model::loadAiNode(aiNode *node, const aiScene *scene)
 {
     for (size_t i = 0; i < node->mNumMeshes; i++)
     {
-        loadMesh(scene->mMeshes[node->mMeshes[i]], scene);
+        loadAiMesh(scene->mMeshes[node->mMeshes[i]], scene);
     }
 
     for (size_t i = 0; i < node->mNumChildren; i++)
     {
-        loadNode(node->mChildren[i], scene);
+        loadAiNode(node->mChildren[i], scene);
     }
 }
 
-void Model::loadMesh(aiMesh *mesh, const aiScene *scene)
+void Model::loadAiMesh(aiMesh *mesh, const aiScene *scene)
 {
     std::vector<GLfloat> vertices;
     std::vector<unsigned int> indices;
@@ -114,7 +139,7 @@ void Model::loadMesh(aiMesh *mesh, const aiScene *scene)
     meshToTex.push_back(mesh->mMaterialIndex);
 }
 
-void Model::loadMaterials(const aiScene *scene)
+void Model::loadAiMaterials(const aiScene *scene)
 {
     textures.resize(scene->mNumMaterials);
     
