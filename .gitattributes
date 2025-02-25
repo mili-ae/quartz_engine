@@ -1,0 +1,2 @@
+# Because Github is showing Mathematica as the language
+*.* linguist-language=cpp
