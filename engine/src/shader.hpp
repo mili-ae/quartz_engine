@@ -10,9 +10,9 @@
 #include "../third_party/glm/gtc/type_ptr.hpp"
 
 #include "common.hpp"
-#include "directional_light.hpp"
-#include "point_light.hpp"
-#include "spot_light.hpp"
+#include "lighting/directional_light.hpp"
+#include "lighting/point_light.hpp"
+#include "lighting/spot_light.hpp"
 
 class Shader
 {

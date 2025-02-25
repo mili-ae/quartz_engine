@@ -9,7 +9,7 @@
 #include "../third_party/glm/gtc/type_ptr.hpp"
 
 #include "common.hpp"
-#include "mesh.hpp"
+#include "models/mesh.hpp"
 #include "shader.hpp"
 
 class Skybox {

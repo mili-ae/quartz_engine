@@ -16,6 +16,10 @@ Texture::Texture(const char* path)
     height = 0;
     bitDepth = 0;
     filePath = path;
+
+    // if (!load()) {
+    //     printf("Failed to load texture: %s\n", path);
+    // }
 }
 
 Texture::~Texture()

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../third_party/glew/glew.h"
+#include "../../third_party/glew/glew.h"
 #include "quartz_lib.hpp"
 
 class Mesh

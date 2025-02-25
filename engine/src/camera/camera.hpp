@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../third_party/glew/glew.h"
-#include "../third_party/glm/glm.hpp"
-#include "../third_party/glm/gtc/matrix_transform.hpp"
-#include "../third_party/glfw/glfw3.h"
+#include "../../third_party/glew/glew.h"
+#include "../../third_party/glm/glm.hpp"
+#include "../../third_party/glm/gtc/matrix_transform.hpp"
+#include "../../third_party/glfw/glfw3.h"
 
 class Camera {
 public:

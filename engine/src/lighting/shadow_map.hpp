@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "../third_party/glew/glew.h"
+#include "../../third_party/glew/glew.h"
 
 class ShadowMap {
 public:
